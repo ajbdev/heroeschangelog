@@ -10,7 +10,7 @@ This module relies entirely on the fantastic [heroes-talents](https://github.com
 
 const heroeschangelog = require('heroeschangelog');
 
-const { patches, heroes } = heroeschangelog();
+const { patches, heroes } = await heroeschangelog();
 
 console.log(patches);
 
