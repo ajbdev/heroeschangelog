@@ -1,0 +1,18 @@
+{
+  "name": "heroeschangelog",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3",
+    "heroes-patch-data": "https://github.com/heroespatchnotes/heroes-patch-data",
+    "heroes-talents": "https://github.com/heroespatchnotes/heroes-talents",
+    "turndown": "^5.0.3"
+  }
+}
