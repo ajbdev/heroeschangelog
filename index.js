@@ -4,6 +4,12 @@ const cheerio = require('cheerio');
 const heroestalents = require('heroes-talents');
 const fs = require('fs');
 const turndown = require('turndown');
+const util = require('util');
+
+const _fsstat = util.promisify(fs.stat);
+const _fswriteFile = util.promisify(fs.writeFile);
+const _fsreadFile = util.promisify(fs.readFile);
+
 const td = new turndown();
 
 td.addRule('remove-images', {
@@ -11,6 +17,7 @@ td.addRule('remove-images', {
     replacement: (content) => ''
 });
 
+const CACHE_FILENAME = '._heroes.cached';
 
 
 let heroes = {};
@@ -86,14 +93,27 @@ async function scrapePatchNotes(patch) {
         }
     });
 
-    patch.changedHeroes = patch.changedHeroes((v, i, s) => s.indexOf(v) === i);
+    patch.changedHeroes = patch.changedHeroes.filter((v, i, s) => s.indexOf(v) === i);
 
     console.log(`Parsed ${patch.patchName} [${patch.officialLink}] - ${patch.liveDate} - Changed Heroes: ${Array.from(patch.changedHeroes).join(', ')}`);
 }
 
-async function iteratePatches(patches) {
-
+async function iteratePatches(patches, cacheTime) {
     heroes = await heroestalents.loadHeroJSONFiles();
+
+    if (!cacheTime) cacheTime = 86400 * 1000;
+
+    if (!fs.existsSync(CACHE_FILENAME)) {
+        await _fswriteFile(CACHE_FILENAME, JSON.stringify({}));
+    }
+
+    const stat = await _fsstat(CACHE_FILENAME);
+    const cacheRaw = await _fsreadFile(CACHE_FILENAME);
+    const cache = JSON.parse(cacheRaw);
+
+    if (stat.mtime.getTime() + cacheTime > (new Date()).getTime() && cache.hasOwnProperty('heroes') && cache.hasOwnProperty('patches')) {
+        return cache;
+    }
 
     Object.keys(heroes).map((h) => heroes[h].changes = {});
 
@@ -103,10 +123,14 @@ async function iteratePatches(patches) {
         }
     }
 
-    return {
+    payload =  {
         patches: patches,
         heroes: heroes
     }
+
+    _fswriteFile(CACHE_FILENAME, JSON.stringify(payload));
+
+    return payload;
 }
 
 module.exports = () => iteratePatches(patches);
